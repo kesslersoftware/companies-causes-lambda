@@ -2,6 +2,8 @@ package com.boycottpro.causecompanystats;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.boycottpro.causecompanystats.model.CauseListItem;
+import com.boycottpro.models.ResponseMessage;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -70,18 +72,19 @@ public class GetTopReasonsHandlerTest {
     }
 
     @Test
-    public void testMissingCompanyIdReturns400() {
+    public void testMissingCompanyIdReturns400() throws JsonProcessingException {
         APIGatewayProxyRequestEvent requestEvent = new APIGatewayProxyRequestEvent();
         requestEvent.setPathParameters(null);
 
         APIGatewayProxyResponseEvent response = handler.handleRequest(requestEvent, context);
 
         assertEquals(400, response.getStatusCode());
-        assertTrue(response.getBody().contains("Missing company_id"));
+        ResponseMessage message = objectMapper.readValue(response.getBody(), ResponseMessage.class);
+        assertTrue(message.getMessage().contains("sorry, there was an error processing your request"));
     }
 
     @Test
-    public void testExceptionReturns500() {
+    public void testExceptionReturns500() throws JsonProcessingException {
         String companyId = "error-case";
         Map<String, String> pathParams = Map.of("company_id", companyId);
 
@@ -93,6 +96,7 @@ public class GetTopReasonsHandlerTest {
         APIGatewayProxyResponseEvent response = handler.handleRequest(requestEvent, context);
 
         assertEquals(500, response.getStatusCode());
-        assertTrue(response.getBody().contains("Unexpected server error"));
+        ResponseMessage message = objectMapper.readValue(response.getBody(), ResponseMessage.class);
+        assertTrue(message.getMessage().contains("sorry, there was an error processing your request"));
     }
 }

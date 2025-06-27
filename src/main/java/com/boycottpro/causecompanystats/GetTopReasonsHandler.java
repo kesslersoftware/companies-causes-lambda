@@ -6,6 +6,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 
 import com.boycottpro.causecompanystats.model.CauseListItem;
+import com.boycottpro.models.ResponseMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class GetTopReasonsHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private static final String TABLE_NAME = "";
+    private static final String TABLE_NAME = "cause_company_stats";
     private final DynamoDbClient dynamoDb;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -34,9 +35,14 @@ public class GetTopReasonsHandler implements RequestHandler<APIGatewayProxyReque
             Map<String, String> pathParams = event.getPathParameters();
             String companyId = (pathParams != null) ? pathParams.get("company_id") : null;
             if (companyId == null || companyId.isEmpty()) {
+                ResponseMessage message = new ResponseMessage(400,
+                        "sorry, there was an error processing your request",
+                        "company_id is missing!");
+                String responseBody = objectMapper.writeValueAsString(message);
                 return new APIGatewayProxyResponseEvent()
                         .withStatusCode(400)
-                        .withBody("{\"error\":\"Missing company_id in path\"}");
+                        .withHeaders(Map.of("Content-Type", "application/json"))
+                        .withBody(responseBody);
             }
             List<CauseListItem> topReasonsToBoycottCompany = reasonPeopleAreBoycottingCompany(companyId);
             String responseBody = objectMapper.writeValueAsString(topReasonsToBoycottCompany);
@@ -45,15 +51,24 @@ public class GetTopReasonsHandler implements RequestHandler<APIGatewayProxyReque
                     .withHeaders(Map.of("Content-Type", "application/json"))
                     .withBody(responseBody);
         } catch (Exception e) {
-            e.printStackTrace();
+            ResponseMessage message = new ResponseMessage(500,
+                    "sorry, there was an error processing your request",
+                    "Unexpected server error: " + e.getMessage());
+            String responseBody = null;
+            try {
+                responseBody = objectMapper.writeValueAsString(message);
+            } catch (JsonProcessingException ex) {
+                throw new RuntimeException(ex);
+            }
             return new APIGatewayProxyResponseEvent()
                     .withStatusCode(500)
-                    .withBody("{\"error\": \"Unexpected server error: " + e.getMessage() + "\"}");
+                    .withHeaders(Map.of("Content-Type", "application/json"))
+                    .withBody(responseBody);
         }
     }
     private List<CauseListItem> reasonPeopleAreBoycottingCompany(String companyId) {
         QueryRequest query = QueryRequest.builder()
-                .tableName("cause_company_stats")
+                .tableName(TABLE_NAME)
                 .indexName("company_cause_stats_index")
                 .keyConditionExpression("company_id = :cid")
                 .expressionAttributeValues(Map.of(

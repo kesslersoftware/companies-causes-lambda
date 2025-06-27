@@ -4,15 +4,15 @@ public class CauseListItem {
 
     private String cause_id;
     private String cause_desc;
-    private int boycottCount;
+    private int boycott_count;
 
     public CauseListItem() {
     }
 
-    public CauseListItem(String cause_id, String cause_desc, int boycottCount) {
+    public CauseListItem(String cause_id, String cause_desc, int boycott_count) {
         this.cause_id = cause_id;
         this.cause_desc = cause_desc;
-        this.boycottCount = boycottCount;
+        this.boycott_count = boycott_count;
     }
 
     public String getCause_id() {
@@ -31,11 +31,11 @@ public class CauseListItem {
         this.cause_desc = cause_desc;
     }
 
-    public int getBoycottCount() {
-        return boycottCount;
+    public int getBoycott_count() {
+        return boycott_count;
     }
 
-    public void setBoycottCount(int boycottCount) {
-        this.boycottCount = boycottCount;
+    public void setBoycott_count(int boycott_count) {
+        this.boycott_count = boycott_count;
     }
 }
