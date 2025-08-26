@@ -39,8 +39,15 @@ public class GetTopReasonsHandlerTest {
         String companyId = "123";
         Map<String, String> pathParams = Map.of("company_id", companyId);
 
-        APIGatewayProxyRequestEvent requestEvent = new APIGatewayProxyRequestEvent();
-        requestEvent.setPathParameters(pathParams);
+        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        Map<String, String> claims = Map.of("sub", "11111111-2222-3333-4444-555555555555");
+        Map<String, Object> authorizer = new HashMap<>();
+        authorizer.put("claims", claims);
+
+        APIGatewayProxyRequestEvent.ProxyRequestContext rc = new APIGatewayProxyRequestEvent.ProxyRequestContext();
+        rc.setAuthorizer(authorizer);
+        event.setRequestContext(rc);
+        event.setPathParameters(pathParams);
 
         Map<String, AttributeValue> item1 = Map.of(
                 "cause_id", AttributeValue.fromS("cause1"),
@@ -63,7 +70,7 @@ public class GetTopReasonsHandlerTest {
                         r.keyConditionExpression().contains("company_id = :cid")
         ))).thenReturn(mockResponse);
 
-        APIGatewayProxyResponseEvent response = handler.handleRequest(requestEvent, context);
+        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
         assertEquals(200, response.getStatusCode());
         String body = response.getBody();
@@ -73,10 +80,17 @@ public class GetTopReasonsHandlerTest {
 
     @Test
     public void testMissingCompanyIdReturns400() throws JsonProcessingException {
-        APIGatewayProxyRequestEvent requestEvent = new APIGatewayProxyRequestEvent();
-        requestEvent.setPathParameters(null);
+        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        Map<String, String> claims = Map.of("sub", "11111111-2222-3333-4444-555555555555");
+        Map<String, Object> authorizer = new HashMap<>();
+        authorizer.put("claims", claims);
 
-        APIGatewayProxyResponseEvent response = handler.handleRequest(requestEvent, context);
+        APIGatewayProxyRequestEvent.ProxyRequestContext rc = new APIGatewayProxyRequestEvent.ProxyRequestContext();
+        rc.setAuthorizer(authorizer);
+        event.setRequestContext(rc);
+        event.setPathParameters(null);
+
+        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
         assertEquals(400, response.getStatusCode());
         ResponseMessage message = objectMapper.readValue(response.getBody(), ResponseMessage.class);
@@ -88,12 +102,19 @@ public class GetTopReasonsHandlerTest {
         String companyId = "error-case";
         Map<String, String> pathParams = Map.of("company_id", companyId);
 
-        APIGatewayProxyRequestEvent requestEvent = new APIGatewayProxyRequestEvent();
-        requestEvent.setPathParameters(pathParams);
+        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        Map<String, String> claims = Map.of("sub", "11111111-2222-3333-4444-555555555555");
+        Map<String, Object> authorizer = new HashMap<>();
+        authorizer.put("claims", claims);
+
+        APIGatewayProxyRequestEvent.ProxyRequestContext rc = new APIGatewayProxyRequestEvent.ProxyRequestContext();
+        rc.setAuthorizer(authorizer);
+        event.setRequestContext(rc);
+        event.setPathParameters(pathParams);
 
         when(dynamoDb.query(any(QueryRequest.class))).thenThrow(new RuntimeException("DynamoDB failure"));
 
-        APIGatewayProxyResponseEvent response = handler.handleRequest(requestEvent, context);
+        APIGatewayProxyResponseEvent response = handler.handleRequest(event, context);
 
         assertEquals(500, response.getStatusCode());
         ResponseMessage message = objectMapper.readValue(response.getBody(), ResponseMessage.class);
